@@ -56,6 +56,21 @@ Nova-3 使用 `/v1/listen` 與 `Results` 訊息；Flux 使用 `/v2/listen` 與 `
 Gemini 3.5 Transcribe Live 是 Deepgram 的替代 STT 管線：PCM 音訊直接送到 Gemini，使用 `interimInputTranscription` 顯示低延遲原文，並以 finalized `inputTranscription` 建立正式字幕；來源語言由 Gemini 自動偵測。原文仍交由 Popup 選擇的 Custom LLM 或 Gemini 文字模型翻成繁中。Gemini Live session 會在接近 9 分 30 秒時提交當前片段並建立新 session，以符合單一 session 最長 10 分鐘的限制。官方文件：[Live Transcription](https://ai.google.dev/gemini-api/docs/live-api/live-transcribe)。
 ## Installation
 
+### 從 Release 安裝（不需 Chrome 商店）
+
+1. 前往 [最新 Release](https://github.com/HorCyChangGenitek/chrmExt_realtime_sub/releases/latest)，下載附件中的 `chrmExt_realtime_sub-v版本號.zip`。
+2. 如需核對下載檔案，可下載同一 Release 的 `SHA256SUMS.txt`。Windows PowerShell 執行 `Get-FileHash .\下載的檔案.zip -Algorithm SHA256`，比對雜湊值。
+3. 將 ZIP 解壓縮至固定資料夾；可先閱讀或掃描其中的原始碼，不需要編譯。
+4. 在 Chrome 開啟 `chrome://extensions`，開啟右上角「開發人員模式」。
+5. 按「載入未封裝項目」，選擇解壓縮後包含 `manifest.json` 的資料夾。
+6. 在擴充功能的 **API 設定**填入自己的服務連線資訊與 API key。
+
+載入後請保留該資料夾，並保持開發人員模式開啟。手動安裝版本不會透過 Chrome 商店自動更新；更新時請停止擷取，以新版檔案替換原資料夾內容，再於擴充功能管理頁按「重新載入」，並重新整理目標網頁。
+
+這是離線安裝包；語音辨識與翻譯仍需連線至所選服務。公開原始碼與 SHA-256 校驗碼方便審查及核對檔案，不代表已通過獨立安全認證。
+
+### 從原始碼安裝
+
 先下載本專案 ZIP 並解壓縮，或使用 Git：
 
 ```sh
