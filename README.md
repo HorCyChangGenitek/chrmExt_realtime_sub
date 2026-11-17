@@ -1,5 +1,7 @@
 # Chrome 即時原文翻譯雙語字幕
 
+隱私權政策：[公開政策頁面](https://HorCyChangGenitek.github.io/chrmExt_realtime_sub/privacy.html)（[原始檔](docs/privacy.html)）。
+
 這是一個可用 Chrome「載入未封裝項目」安裝的 Manifest V3 擴充功能。它擷取目前選取分頁的音訊，可選擇 Deepgram 或 Gemini 3.5 Transcribe Live 產生原文，再交由 Custom LLM 或 Gemini 文字模型翻譯成台灣繁體中文，最後在原分頁顯示可供 OBS 擷取的雙語字幕。使用者可在 Popup 輸入自己的 API key 與服務設定。
 
 ## 架構
