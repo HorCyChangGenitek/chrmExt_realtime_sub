@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Realtime Subtitles</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <main class="app">
+        <header>
+            <h1>Realtime Subtitles</h1>
+            <p>原文 → 繁體中文</p>
+        </header>
+
+        <nav class="tabs" role="tablist" aria-label="Subtitle settings">
+            <button id="tab-control-button" class="tab active" type="button" role="tab" aria-selected="true" aria-controls="tab-control">字幕控制</button>
+            <button id="tab-api-button" class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-api">API 設定</button>
+            <button id="tab-appearance-button" class="tab" type="button" role="tab" aria-selected="false" aria-controls="tab-appearance">字幕外觀</button>
+        </nav>
+
+        <section id="tab-control" class="tab-panel" role="tabpanel" aria-labelledby="tab-control-button">
+            <section class="status-card" aria-live="polite">
+                <div><span>Connection</span><strong id="connection-status">Idle</strong></div>
+                <div><span>Speech</span><strong id="deepgram-status">Disconnected</strong></div>
+                <div><span>Translator</span><strong id="translator-status">Not checked</strong></div>
+                <p id="error-message" class="error" hidden></p>
+            </section>
+
+            <div id="configuration-warning" class="notice" hidden>
+                <span id="configuration-warning-text"></span>
+                <button id="open-api-settings" class="text-button" type="button">前往設定</button>
+            </div>
+
+            <section class="actions">
+                <button id="start-button" class="primary" type="button">Start Capture</button>
+                <button id="stop-button" type="button" disabled>Stop Capture</button>
+                <button id="clear-button" type="button">Clear Subtitles</button>
+            </section>
+
+            <section class="settings">
+                <label for="deepgram-profile"><span>Speech model</span></label>
+                <select id="deepgram-profile"></select>
+                <p class="setting-hint">Stop capture before switching speech pipelines.</p>
+
+                <label for="translation-profile"><span>Translation model</span></label>
+                <select id="translation-profile"></select>
+                <p id="translation-hint" class="setting-hint">Translates speech into Traditional Chinese.</p>
+            </section>
+
+            <section id="debug-panel" class="debug-panel" hidden>
+                <h2>Latest debug event</h2>
+                <pre id="debug-output">No debug data yet.</pre>
+            </section>
+        </section>
+
+        <section id="tab-api" class="tab-panel" role="tabpanel" aria-labelledby="tab-api-button" hidden>
+            <p class="section-intro">API key 只會由擴充功能用於連線，不會同步到其他 Chrome 裝置。測試連線不會自動儲存；請另按「儲存」後再開始擷取。</p>
+
+            <section class="provider-card" data-provider="deepgram">
+                <div class="provider-heading"><h2>Deepgram</h2><span id="deepgram-key-status" class="key-status">尚未設定</span></div>
+                <label for="deepgram-key">API key</label>
+                <div class="secret-row"><input id="deepgram-key" type="password" autocomplete="off" spellcheck="false" placeholder="輸入新 key；留空保留已儲存的 key"><button class="reveal-button" type="button" data-reveal="deepgram-key" aria-label="顯示 Deepgram API key">顯示</button></div>
+                <label for="deepgram-storage">儲存方式</label>
+                <select id="deepgram-storage" class="storage-mode"><option value="session">僅本次瀏覽器工作階段</option><option value="device">記住此裝置</option></select>
+                <div class="provider-actions"><button type="button" data-save-provider="deepgram">儲存</button><button type="button" data-test-provider="deepgram">測試連線</button><button type="button" class="quiet-button" data-remove-provider="deepgram">移除 key</button></div>
+                <p id="deepgram-result" class="form-result" aria-live="polite"></p>
+            </section>
+
+            <section class="provider-card" data-provider="gemini">
+                <div class="provider-heading"><h2>Gemini</h2><span id="gemini-key-status" class="key-status">尚未設定</span></div>
+                <p class="setting-hint">同一組 key 供 Gemini 語音辨識與翻譯使用。</p>
+                <label for="gemini-key">API key</label>
+                <div class="secret-row"><input id="gemini-key" type="password" autocomplete="off" spellcheck="false" placeholder="輸入新 key；留空保留已儲存的 key"><button class="reveal-button" type="button" data-reveal="gemini-key" aria-label="顯示 Gemini API key">顯示</button></div>
+                <label for="gemini-storage">儲存方式</label>
+                <select id="gemini-storage" class="storage-mode"><option value="session">僅本次瀏覽器工作階段</option><option value="device">記住此裝置</option></select>
+                <div class="provider-actions"><button type="button" data-save-provider="gemini">儲存</button><button type="button" data-test-provider="gemini">測試連線</button><button type="button" class="quiet-button" data-remove-provider="gemini">移除 key</button></div>
+                <p id="gemini-result" class="form-result" aria-live="polite"></p>
+            </section>
+
+            <section class="provider-card" data-provider="customLlm">
+                <div class="provider-heading"><h2>Custom LLM</h2><span id="customLlm-key-status" class="key-status">尚未設定</span></div>
+                <p class="setting-hint">支援 OpenAI 相容的 Chat Completions API。無需驗證的服務可不填 key。連線測試會送出一個短請求，可能產生少量費用。</p>
+                <label for="customLlm-name">顯示名稱</label>
+                <input id="customLlm-name" type="text" autocomplete="off" value="Custom LLM" placeholder="例如：Local LLM">
+                <label for="customLlm-base-url">Base URL</label>
+                <input id="customLlm-base-url" type="url" autocomplete="off" spellcheck="false" placeholder="http://localhost:8000/v1">
+                <label for="customLlm-model">Model ID</label>
+                <input id="customLlm-model" type="text" autocomplete="off" spellcheck="false" placeholder="例如：qwen2.5-7b-instruct">
+                <label for="customLlm-key">API key（選填）</label>
+                <div class="secret-row"><input id="customLlm-key" type="password" autocomplete="off" spellcheck="false" placeholder="可留空，空白表示保留已儲存的 key"><button class="reveal-button" type="button" data-reveal="customLlm-key" aria-label="顯示 Custom LLM API key">顯示</button></div>
+                <label for="customLlm-storage">key 儲存方式</label>
+                <select id="customLlm-storage" class="storage-mode"><option value="session">僅本次瀏覽器工作階段</option><option value="device">記住此裝置</option></select>
+                <div class="provider-actions"><button type="button" data-save-provider="customLlm">儲存</button><button type="button" data-test-provider="customLlm">測試連線</button><button type="button" class="quiet-button" data-remove-provider="customLlm">移除 key</button></div>
+                <p id="customLlm-result" class="form-result" aria-live="polite"></p>
+            </section>
+
+            <p class="privacy-note">「記住此裝置」會將 key 保存在目前 Chrome 設定檔；Chrome 儲存區不等同加密保險箱。「僅本次瀏覽器工作階段」會在瀏覽器關閉、外掛重新載入或更新後清除 key。</p>
+        </section>
+
+        <section id="tab-appearance" class="tab-panel" role="tabpanel" aria-labelledby="tab-appearance-button" hidden>
+            <div class="preview-card">
+                <span class="preview-label">即時預覽</span>
+                <div id="subtitle-preview" class="subtitle-preview">
+                    <p class="preview-english">Realtime subtitles appear here.</p>
+                    <p class="preview-chinese">即時字幕會顯示在這裡。</p>
+                </div>
+            </div>
+
+            <section class="window-position">
+                <div><strong>字幕視窗位置</strong><span>可在影片頁面拖曳把手調整。</span></div>
+                <button id="reset-position" type="button">重設為置中</button>
+            </section>
+
+            <section class="settings">
+                <label for="font-size"><span>字體大小</span><output id="font-size-value">30 px</output></label>
+                <input id="font-size" type="range" min="18" max="64" step="1" value="30">
+
+                <label for="subtitle-width"><span>字幕寬度</span><output id="subtitle-width-value">760 px</output></label>
+                <input id="subtitle-width" type="range" min="360" max="1400" step="20" value="760">
+
+                <label for="background-opacity"><span>背景不透明度</span><output id="background-opacity-value">78%</output></label>
+                <input id="background-opacity" type="range" min="0" max="100" step="2" value="78">
+
+                <label for="background-color"><span>背景顏色</span></label>
+                <input id="background-color" class="color-input" type="color" value="#000000">
+
+                <label for="english-color"><span>原文字色</span></label>
+                <input id="english-color" class="color-input" type="color" value="#ffffff">
+
+                <label for="chinese-color"><span>中文字幕色</span></label>
+                <input id="chinese-color" class="color-input" type="color" value="#fff3a6">
+
+                <label class="toggle"><input id="show-english" type="checkbox" checked><span>顯示原文字幕</span></label>
+                <label class="toggle"><input id="show-chinese" type="checkbox" checked><span>顯示中文字幕</span></label>
+                <label class="toggle"><input id="debug-mode" type="checkbox"><span>Debug Mode</span></label>
+            </section>
+        </section>
+    </main>
+    <script type="module" src="popup.js"></script>
+</body>
+</html>

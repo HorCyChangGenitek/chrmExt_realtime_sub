@@ -1,0 +1,29 @@
+# Local credentials and environment files
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
+
+# Dependencies, generated packages and logs
+node_modules/
+coverage/
+dist/
+*.zip
+*.crx
+*.log
+
+# Local editor, agent and operating system files
+.vscode/
+.idea/
+.codex/
+.agents/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.bak
